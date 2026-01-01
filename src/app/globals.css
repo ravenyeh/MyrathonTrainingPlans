@@ -3,25 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --secondary: #64748b;
-  --accent: #f97316;
-  --success: #22c55e;
-  --warning: #eab308;
-  --error: #ef4444;
-  --muted: #f1f5f9;
-  --border: #e2e8f0;
+  --background: #FFF9F5;
+  --foreground: #4A4A4A;
+  --primary: #F8A5C2;
+  --primary-dark: #F48FB1;
+  --secondary: #B8A9C9;
+  --accent: #98D8C8;
+  --success: #98D8C8;
+  --warning: #FFE082;
+  --error: #F8A5C2;
+  --muted: #FFF0F5;
+  --border: #F0E6EF;
+
+  /* Macaron Colors */
+  --macaron-rose: #F8B4C8;
+  --macaron-lavender: #D8BFD8;
+  --macaron-mint: #98D8C8;
+  --macaron-lemon: #FFF9C4;
+  --macaron-sky: #AED9E0;
+  --macaron-peach: #FFDAB9;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #1e293b;
-    --border: #334155;
+    --background: #2D2438;
+    --foreground: #F5F0F6;
+    --muted: #3D3348;
+    --border: #4D4358;
   }
 }
 
@@ -39,62 +47,64 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-rose-300 hover:bg-rose-400 text-white font-medium py-2 px-4 rounded-xl transition-colors duration-200 shadow-sm;
   }
 
   .btn-secondary {
-    @apply bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-lavender-100 hover:bg-lavender-200 text-lavender-700 font-medium py-2 px-4 rounded-xl transition-colors duration-200;
   }
 
   .btn-outline {
-    @apply border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply border-2 border-rose-300 text-rose-400 hover:bg-rose-300 hover:text-white font-medium py-2 px-4 rounded-xl transition-colors duration-200;
   }
 
   .card {
-    @apply bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 border border-slate-200 dark:border-slate-700;
+    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border border-rose-100 dark:border-slate-700;
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 bg-white dark:bg-slate-800;
+    @apply w-full px-4 py-2 border border-lavender-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-rose-300 focus:border-transparent outline-none transition-all duration-200 bg-white dark:bg-slate-800;
   }
 
+  /* Training Phases - Macaron Style */
   .phase-base {
-    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+    @apply bg-mint-100 text-mint-700 dark:bg-mint-900 dark:text-mint-200;
   }
 
   .phase-build {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+    @apply bg-lemon-100 text-lemon-700 dark:bg-lemon-900 dark:text-lemon-200;
   }
 
   .phase-peak {
-    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+    @apply bg-peach-100 text-peach-700 dark:bg-peach-900 dark:text-peach-200;
   }
 
   .phase-taper {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+    @apply bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-200;
   }
 
+  /* Workout Types - Macaron Style */
   .workout-easy {
-    @apply bg-emerald-50 border-emerald-300 dark:bg-emerald-950 dark:border-emerald-700;
+    @apply bg-mint-50 border-mint-200 dark:bg-mint-950 dark:border-mint-700;
   }
 
   .workout-long {
-    @apply bg-purple-50 border-purple-300 dark:bg-purple-950 dark:border-purple-700;
+    @apply bg-lavender-50 border-lavender-200 dark:bg-lavender-950 dark:border-lavender-700;
   }
 
   .workout-tempo {
-    @apply bg-orange-50 border-orange-300 dark:bg-orange-950 dark:border-orange-700;
+    @apply bg-peach-50 border-peach-200 dark:bg-peach-950 dark:border-peach-700;
   }
 
   .workout-interval {
-    @apply bg-red-50 border-red-300 dark:bg-red-950 dark:border-red-700;
+    @apply bg-rose-50 border-rose-200 dark:bg-rose-950 dark:border-rose-700;
   }
 
   .workout-recovery {
-    @apply bg-sky-50 border-sky-300 dark:bg-sky-950 dark:border-sky-700;
+    @apply bg-sky-50 border-sky-200 dark:bg-sky-950 dark:border-sky-700;
   }
 
   .workout-rest {
-    @apply bg-slate-50 border-slate-300 dark:bg-slate-950 dark:border-slate-700;
+    @apply bg-lemon-50 border-lemon-200 dark:bg-lemon-950 dark:border-lemon-700;
   }
 }

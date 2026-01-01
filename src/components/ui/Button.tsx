@@ -11,14 +11,14 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm';
 
     const variants = {
-      primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-      secondary: 'bg-slate-200 hover:bg-slate-300 text-slate-800 focus:ring-slate-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600',
-      outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white focus:ring-blue-500',
-      ghost: 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 focus:ring-slate-500',
-      danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
+      primary: 'bg-rose-300 hover:bg-rose-400 text-white focus:ring-rose-300',
+      secondary: 'bg-lavender-100 hover:bg-lavender-200 text-lavender-700 focus:ring-lavender-300 dark:bg-lavender-800 dark:text-lavender-100 dark:hover:bg-lavender-700',
+      outline: 'border-2 border-rose-300 text-rose-400 hover:bg-rose-300 hover:text-white focus:ring-rose-300 bg-transparent',
+      ghost: 'text-lavender-600 hover:bg-lavender-50 dark:text-lavender-300 dark:hover:bg-lavender-900 focus:ring-lavender-300 shadow-none',
+      danger: 'bg-peach-400 hover:bg-peach-500 text-white focus:ring-peach-300',
     };
 
     const sizes = {
