@@ -1,18 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
-import { getLocalPlan, saveLocalPlan } from '@/lib/localStorage';
+import { getLocalPlan, saveLocalPlan, deleteLocalPlan, clearActivePlanId } from '@/lib/localStorage';
 import { Plan, Week, Workout } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Modal } from '@/components/ui';
 import { getPhaseLabel, getDistanceLabel, formatDate, getDayName } from '@/lib/utils';
 
 export default function PlanDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const planId = params.planId as string;
   const { user } = useAuth();
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -20,6 +21,8 @@ export default function PlanDetailPage() {
   const [selectedWorkout, setSelectedWorkout] = useState<{ week: Week; workout: Workout } | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [isLocalPlan, setIsLocalPlan] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchPlan() {
@@ -124,6 +127,24 @@ export default function PlanDetailPage() {
     return 0;
   };
 
+  const handleDeletePlan = async () => {
+    if (!plan) return;
+
+    setDeleting(true);
+    try {
+      if (isLocalPlan) {
+        deleteLocalPlan(planId);
+        clearActivePlanId();
+      } else if (db) {
+        await deleteDoc(doc(db, 'plans', planId));
+      }
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -179,6 +200,18 @@ export default function PlanDetailPage() {
               onClick={() => setViewMode('list')}
             >
               列表
+            </Button>
+            <Link href="/plan/new">
+              <Button variant="outline" size="sm">
+                建立新計劃
+              </Button>
+            </Link>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setShowDeleteModal(true)}
+            >
+              刪除計劃
             </Button>
           </div>
         </div>
@@ -388,6 +421,36 @@ export default function PlanDetailPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="確認刪除計劃"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-slate-300">
+            確定要刪除「{plan.race.name}」嗎？此操作無法復原。
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={deleting}
+            >
+              取消
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeletePlan}
+              isLoading={deleting}
+            >
+              確認刪除
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
