@@ -15,7 +15,6 @@ export default function Navbar() {
   const navLinks = [
     { href: '/dashboard', label: '儀表板' },
     { href: '/plan/new', label: '建立計劃' },
-    { href: '/history', label: '歷史紀錄' },
   ];
 
   return (
@@ -24,7 +23,7 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-2">
+            <Link href="/dashboard" className="flex items-center gap-2">
               <svg
                 className="w-8 h-8 text-rose-400"
                 fill="none"
@@ -44,25 +43,36 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          {user && (
-            <div className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                    pathname === link.href
-                      ? 'bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          )}
+          {/* Desktop Navigation - Always visible */}
+          <div className="hidden md:flex items-center gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                  pathname === link.href
+                    ? 'bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+            {user && (
+              <Link
+                href="/history"
+                className={cn(
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                  pathname === '/history'
+                    ? 'bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
+                )}
+              >
+                歷史紀錄
+              </Link>
+            )}
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-4">
@@ -89,56 +99,49 @@ export default function Navbar() {
                 >
                   登出
                 </Button>
-
-                {/* Mobile menu button */}
-                <button
-                  className="md:hidden p-2"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    {mobileMenuOpen ? (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    ) : (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 12h16M4 18h16"
-                      />
-                    )}
-                  </svg>
-                </button>
               </>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    登入
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="sm">
-                    註冊
-                  </Button>
-                </Link>
-              </div>
+              <Link href="/login" className="hidden md:block">
+                <Button variant="ghost" size="sm">
+                  登入
+                </Button>
+              </Link>
             )}
+
+            {/* Mobile menu button - Always visible */}
+            <button
+              className="md:hidden p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                {mobileMenuOpen ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
-      {user && mobileMenuOpen && (
+      {/* Mobile Navigation - Always available */}
+      {mobileMenuOpen && (
         <div className="md:hidden border-t border-rose-100 dark:border-slate-800">
           <div className="px-4 py-3 space-y-1">
             {navLinks.map((link) => (
@@ -156,22 +159,46 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/profile"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
-            >
-              個人資料
-            </Link>
-            <button
-              onClick={() => {
-                signOut();
-                setMobileMenuOpen(false);
-              }}
-              className="block w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-peach-600 hover:bg-peach-50 dark:hover:bg-peach-900/20"
-            >
-              登出
-            </button>
+            {user ? (
+              <>
+                <Link
+                  href="/history"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'block px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    pathname === '/history'
+                      ? 'bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
+                  )}
+                >
+                  歷史紀錄
+                </Link>
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+                >
+                  個人資料
+                </Link>
+                <button
+                  onClick={() => {
+                    signOut();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-peach-600 hover:bg-peach-50 dark:hover:bg-peach-900/20"
+                >
+                  登出
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+              >
+                登入（同步資料用）
+              </Link>
+            )}
           </div>
         </div>
       )}

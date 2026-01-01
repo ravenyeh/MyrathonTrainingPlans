@@ -23,10 +23,10 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/register"
+                  href="/plan/new"
                   className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white text-rose-400 rounded-2xl hover:bg-rose-50 transition-all shadow-lg hover:shadow-xl"
                 >
-                  免費開始
+                  立即建立計劃
                   <svg
                     className="ml-2 w-5 h-5"
                     fill="none"
@@ -42,12 +42,15 @@ export default function Home() {
                   </svg>
                 </Link>
                 <Link
-                  href="/login"
+                  href="/dashboard"
                   className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold border-2 border-white text-white rounded-2xl hover:bg-white/20 transition-all"
                 >
-                  登入帳號
+                  查看儀表板
                 </Link>
               </div>
+              <p className="mt-6 text-sm text-white/70">
+                無需註冊，立即開始使用
+              </p>
             </div>
           </div>
         </section>
@@ -151,7 +154,7 @@ export default function Home() {
                 如何開始？
               </h2>
               <p className="text-lg text-gray-500">
-                只需三個簡單步驟
+                只需三個簡單步驟，無需註冊
               </p>
             </div>
 
@@ -202,13 +205,13 @@ export default function Home() {
               準備好挑戰你的下一場馬拉松了嗎？
             </h2>
             <p className="text-xl text-white/90 mb-10">
-              現在就開始你的科學化訓練之旅
+              現在就開始你的科學化訓練之旅，無需註冊
             </p>
             <Link
-              href="/register"
+              href="/plan/new"
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white text-rose-400 rounded-2xl hover:bg-rose-50 transition-all shadow-lg hover:shadow-xl"
             >
-              立即免費註冊
+              立即建立訓練計劃
             </Link>
           </div>
         </section>
