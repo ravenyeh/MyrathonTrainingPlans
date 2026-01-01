@@ -21,10 +21,10 @@ export default function AppLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-50 to-lavender-50 dark:bg-slate-900">
         <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">載入中...</p>
+          <div className="animate-spin w-12 h-12 border-4 border-rose-300 border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-slate-400">載入中...</p>
         </div>
       </div>
     );
@@ -35,7 +35,7 @@ export default function AppLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-rose-50/30 to-lavender-50/30 dark:bg-slate-900">
       <Navbar />
       <main className="flex-1">
         {children}

@@ -19,14 +19,14 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+    <nav className="bg-white dark:bg-slate-900 border-b border-rose-100 dark:border-slate-800 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
             <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-2">
               <svg
-                className="w-8 h-8 text-blue-600"
+                className="w-8 h-8 text-rose-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -38,7 +38,7 @@ export default function Navbar() {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              <span className="text-xl font-bold text-slate-900 dark:text-white">
+              <span className="text-xl font-bold text-gray-700 dark:text-white">
                 Marathon Planner
               </span>
             </Link>
@@ -54,8 +54,8 @@ export default function Navbar() {
                   className={cn(
                     'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                     pathname === link.href
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
+                      ? 'bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
                   )}
                 >
                   {link.label}
@@ -70,10 +70,10 @@ export default function Navbar() {
               <>
                 <Link
                   href="/profile"
-                  className="hidden md:flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  className="hidden md:flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white"
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  <div className="w-8 h-8 rounded-full bg-lavender-100 dark:bg-lavender-900 flex items-center justify-center">
+                    <span className="text-sm font-medium text-lavender-700 dark:text-lavender-300">
                       {userData?.displayName?.charAt(0).toUpperCase() || 'U'}
                     </span>
                   </div>
@@ -139,7 +139,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {user && mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 dark:border-slate-800">
+        <div className="md:hidden border-t border-rose-100 dark:border-slate-800">
           <div className="px-4 py-3 space-y-1">
             {navLinks.map((link) => (
               <Link
@@ -149,8 +149,8 @@ export default function Navbar() {
                 className={cn(
                   'block px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                   pathname === link.href
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
+                    ? 'bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
                 )}
               >
                 {link.label}
@@ -159,7 +159,7 @@ export default function Navbar() {
             <Link
               href="/profile"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+              className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-lavender-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
             >
               個人資料
             </Link>
@@ -168,7 +168,7 @@ export default function Navbar() {
                 signOut();
                 setMobileMenuOpen(false);
               }}
-              className="block w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="block w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-peach-600 hover:bg-peach-50 dark:hover:bg-peach-900/20"
             >
               登出
             </button>
