@@ -3,59 +3,37 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/contexts/AuthContext';
 import { getLocalPlan, saveLocalPlan, deleteLocalPlan, clearActivePlanId } from '@/lib/localStorage';
 import { Plan, Week, Workout } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Modal } from '@/components/ui';
 import { getPhaseLabel, getDistanceLabel, formatDate, getDayName } from '@/lib/utils';
+import GarminExportModal from '@/components/GarminExportModal';
 
 export default function PlanDetailPage() {
   const params = useParams();
   const router = useRouter();
   const planId = params.planId as string;
-  const { user } = useAuth();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedWorkout, setSelectedWorkout] = useState<{ week: Week; workout: Workout } | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-  const [isLocalPlan, setIsLocalPlan] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showGarminModal, setShowGarminModal] = useState(false);
 
   useEffect(() => {
-    async function fetchPlan() {
-      if (!planId) return;
-
-      // Check if it's a local plan
-      if (planId.startsWith('local_')) {
-        const localPlan = getLocalPlan(planId);
-        if (localPlan) {
-          setPlan(localPlan);
-          setIsLocalPlan(true);
-        }
-        setLoading(false);
-        return;
-      }
-
-      // Fetch from Firestore if logged in
-      if (user && db) {
-        try {
-          const planDoc = await getDoc(doc(db, 'plans', planId));
-          if (planDoc.exists()) {
-            setPlan({ id: planDoc.id, ...planDoc.data() } as Plan);
-          }
-        } catch (error) {
-          console.error('Error fetching plan:', error);
-        }
-      }
-
+    if (!planId) {
       setLoading(false);
+      return;
     }
 
-    fetchPlan();
-  }, [user, planId]);
+    // Load from localStorage
+    const localPlan = getLocalPlan(planId);
+    if (localPlan) {
+      setPlan(localPlan);
+    }
+    setLoading(false);
+  }, [planId]);
 
   const formatWorkoutDate = (date: Workout['date']) => {
     if (!date) return '';
@@ -73,7 +51,7 @@ export default function PlanDetailPage() {
     return formatDate(dateObj);
   };
 
-  const handleToggleComplete = async (weekNumber: number, dayOfWeek: number) => {
+  const handleToggleComplete = (weekNumber: number, dayOfWeek: number) => {
     if (!plan) return;
 
     const updatedWeeks = plan.weeks.map((week) => {
@@ -92,20 +70,8 @@ export default function PlanDetailPage() {
     });
 
     const updatedPlan = { ...plan, weeks: updatedWeeks };
-
-    try {
-      if (isLocalPlan) {
-        // Save to localStorage
-        saveLocalPlan(updatedPlan);
-        setPlan(updatedPlan);
-      } else if (db) {
-        // Save to Firestore
-        await updateDoc(doc(db, 'plans', planId), { weeks: updatedWeeks });
-        setPlan(updatedPlan);
-      }
-    } catch (error) {
-      console.error('Error updating workout:', error);
-    }
+    saveLocalPlan(updatedPlan);
+    setPlan(updatedPlan);
   };
 
   const getCurrentWeekIndex = () => {
@@ -127,22 +93,13 @@ export default function PlanDetailPage() {
     return 0;
   };
 
-  const handleDeletePlan = async () => {
+  const handleDeletePlan = () => {
     if (!plan) return;
 
     setDeleting(true);
-    try {
-      if (isLocalPlan) {
-        deleteLocalPlan(planId);
-        clearActivePlanId();
-      } else if (db) {
-        await deleteDoc(doc(db, 'plans', planId));
-      }
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Error deleting plan:', error);
-      setDeleting(false);
-    }
+    deleteLocalPlan(planId);
+    clearActivePlanId();
+    router.push('/dashboard');
   };
 
   if (loading) {
@@ -201,6 +158,16 @@ export default function PlanDetailPage() {
             >
               列表
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowGarminModal(true)}
+            >
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+              </svg>
+              匯出 Garmin
+            </Button>
             <Link href="/plan/new">
               <Button variant="outline" size="sm">
                 建立新計劃
@@ -236,28 +203,12 @@ export default function PlanDetailPage() {
           </Card>
         </div>
 
-        {/* Integration buttons for local plans */}
-        {isLocalPlan && (
-          <div className="mt-4 p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <p className="text-sm text-sky-800 dark:text-sky-200">
-                此計劃儲存在你的瀏覽器中。登入後可同步至雲端或匯出。
-              </p>
-              <div className="flex gap-2">
-                <Link href="/login?redirect=/dashboard&action=google-calendar">
-                  <Button variant="outline" size="sm">
-                    匯出 Google Calendar
-                  </Button>
-                </Link>
-                <Link href="/login?redirect=/dashboard&action=garmin">
-                  <Button variant="outline" size="sm">
-                    連接 Garmin
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Info message */}
+        <div className="mt-4 p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
+          <p className="text-sm text-sky-800 dark:text-sky-200">
+            此計劃儲存在你的瀏覽器中。使用右上角「匯出 Garmin」按鈕可以直接將訓練匯入 Garmin Connect。
+          </p>
+        </div>
       </div>
 
       {/* Training Weeks */}
@@ -452,6 +403,13 @@ export default function PlanDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Garmin Export Modal */}
+      <GarminExportModal
+        isOpen={showGarminModal}
+        onClose={() => setShowGarminModal(false)}
+        plan={plan}
+      />
     </div>
   );
 }

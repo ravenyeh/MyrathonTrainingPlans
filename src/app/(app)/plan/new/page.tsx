@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Timestamp, collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/contexts/AuthContext';
+import { Timestamp } from 'firebase/firestore';
 import { generatePlan } from '@/lib/planGenerator';
 import { saveLocalPlan, setActivePlanId, generateLocalId } from '@/lib/localStorage';
+import { trackPlanGeneration } from '@/lib/analytics';
 import { RaceDistance, Plan } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import { getDistanceLabel } from '@/lib/utils';
@@ -15,7 +14,6 @@ type Step = 'race' | 'ability' | 'review';
 
 export default function NewPlanPage() {
   const router = useRouter();
-  const { user, userData } = useAuth();
   const [currentStep, setCurrentStep] = useState<Step>('race');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,10 +25,10 @@ export default function NewPlanPage() {
   const [targetTime, setTargetTime] = useState('');
   const [raceCity, setRaceCity] = useState('');
 
-  // Ability settings (for non-logged in users)
-  const [weeklyMileage, setWeeklyMileage] = useState(userData?.ability?.weeklyMileage?.toString() || '30');
-  const [daysPerWeek, setDaysPerWeek] = useState(userData?.availability?.daysPerWeek?.toString() || '4');
-  const [runningAge, setRunningAge] = useState(userData?.ability?.runningAge?.toString() || '12');
+  // Ability settings
+  const [weeklyMileage, setWeeklyMileage] = useState('30');
+  const [daysPerWeek, setDaysPerWeek] = useState('4');
+  const [runningAge, setRunningAge] = useState('12');
 
   // Recent race for VDOT calculation
   const [recentRaceDistance, setRecentRaceDistance] = useState<RaceDistance | ''>('');
@@ -86,54 +84,43 @@ export default function NewPlanPage() {
         runningAge: age,
       });
 
-      // If logged in, save to Firestore
-      if (user && db) {
-        const planData = {
-          userId: user.uid,
-          createdAt: Timestamp.now(),
-          status: 'active',
-          race: {
-            name: raceName,
-            date: Timestamp.fromDate(raceDateObj),
-            distance: raceDistance,
-            targetTime: targetTime || null,
-            city: raceCity || null,
-          },
-          trainingParams,
-          weeks,
-        };
-
-        const docRef = await addDoc(collection(db, 'plans'), planData);
-        router.push(`/plan/${docRef.id}`);
-      } else {
-        // Save to localStorage for non-logged in users
-        const planId = generateLocalId();
-        const localPlan: Plan = {
-          id: planId,
-          userId: 'local',
-          createdAt: { toDate: () => new Date() } as Timestamp,
-          status: 'active',
-          race: {
-            name: raceName,
-            date: { toDate: () => raceDateObj } as Timestamp,
-            distance: raceDistance,
-            targetTime: targetTime || undefined,
-            city: raceCity || undefined,
-          },
-          trainingParams,
-          weeks: weeks.map(week => ({
-            ...week,
-            workouts: week.workouts.map(workout => ({
-              ...workout,
-              date: { toDate: () => workout.date } as unknown as Timestamp,
-            })),
+      // Save to localStorage
+      const planId = generateLocalId();
+      const localPlan: Plan = {
+        id: planId,
+        userId: 'local',
+        createdAt: { toDate: () => new Date() } as Timestamp,
+        status: 'active',
+        race: {
+          name: raceName,
+          date: { toDate: () => raceDateObj } as Timestamp,
+          distance: raceDistance,
+          targetTime: targetTime || undefined,
+          city: raceCity || undefined,
+        },
+        trainingParams,
+        weeks: weeks.map(week => ({
+          ...week,
+          workouts: week.workouts.map(workout => ({
+            ...workout,
+            date: { toDate: () => workout.date } as unknown as Timestamp,
           })),
-        };
+        })),
+      };
 
-        saveLocalPlan(localPlan);
-        setActivePlanId(planId);
-        router.push(`/plan/${planId}`);
-      }
+      saveLocalPlan(localPlan);
+      setActivePlanId(planId);
+
+      // Track analytics (anonymous)
+      trackPlanGeneration({
+        distance: raceDistance,
+        targetTime: targetTime || undefined,
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: raceDate,
+        weeklyDays: days,
+      });
+
+      router.push(`/plan/${planId}`);
     } catch (err) {
       console.error('Error creating plan:', err);
       setError('建立計劃時發生錯誤，請稍後再試');
@@ -394,13 +381,11 @@ export default function NewPlanPage() {
               </p>
             </div>
 
-            {!user && (
-              <div className="p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
-                <p className="text-sm text-sky-800 dark:text-sky-200">
-                  計劃會儲存在你的瀏覽器中。如需匯出到 Google Calendar 或連接 Garmin Connect，請登入帳號。
-                </p>
-              </div>
-            )}
+            <div className="p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
+              <p className="text-sm text-sky-800 dark:text-sky-200">
+                計劃會儲存在你的瀏覽器中。無需註冊帳號即可使用！
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
