@@ -6,7 +6,8 @@ import { Timestamp, collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { generatePlan } from '@/lib/planGenerator';
-import { RaceDistance } from '@/types';
+import { saveLocalPlan, setActivePlanId, generateLocalId } from '@/lib/localStorage';
+import { RaceDistance, Plan } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import { getDistanceLabel } from '@/lib/utils';
 
@@ -26,7 +27,12 @@ export default function NewPlanPage() {
   const [targetTime, setTargetTime] = useState('');
   const [raceCity, setRaceCity] = useState('');
 
-  // Use profile data for ability
+  // Ability settings (for non-logged in users)
+  const [weeklyMileage, setWeeklyMileage] = useState(userData?.ability?.weeklyMileage?.toString() || '30');
+  const [daysPerWeek, setDaysPerWeek] = useState(userData?.availability?.daysPerWeek?.toString() || '4');
+  const [runningAge, setRunningAge] = useState(userData?.ability?.runningAge?.toString() || '12');
+
+  // Recent race for VDOT calculation
   const [recentRaceDistance, setRecentRaceDistance] = useState<RaceDistance | ''>('');
   const [recentRaceTime, setRecentRaceTime] = useState('');
 
@@ -58,45 +64,76 @@ export default function NewPlanPage() {
   };
 
   const handleCreatePlan = async () => {
-    if (!user || !userData || !db) return;
-
     setLoading(true);
     setError('');
 
     try {
       const raceDateObj = new Date(raceDate);
+      const mileage = parseInt(weeklyMileage) || 30;
+      const days = parseInt(daysPerWeek) || 4;
+      const age = parseInt(runningAge) || 12;
 
       // Generate the plan
       const { weeks, trainingParams } = generatePlan({
         raceDate: raceDateObj,
         raceDistance,
         targetTime: targetTime || undefined,
-        currentMileage: userData.ability.weeklyMileage || 20,
-        daysPerWeek: userData.availability.daysPerWeek || 4,
-        hoursPerSession: userData.availability.hoursPerSession || 1,
-        recentRaceTime: recentRaceTime || userData.ability.recent5K || undefined,
+        currentMileage: mileage,
+        daysPerWeek: days,
+        hoursPerSession: 1,
+        recentRaceTime: recentRaceTime || undefined,
         recentRaceDistance: (recentRaceDistance as RaceDistance) || '5K',
-        runningAge: userData.ability.runningAge || 12,
+        runningAge: age,
       });
 
-      // Save to Firestore
-      const planData = {
-        userId: user.uid,
-        createdAt: Timestamp.now(),
-        status: 'active',
-        race: {
-          name: raceName,
-          date: Timestamp.fromDate(raceDateObj),
-          distance: raceDistance,
-          targetTime: targetTime || null,
-          city: raceCity || null,
-        },
-        trainingParams,
-        weeks,
-      };
+      // If logged in, save to Firestore
+      if (user && db) {
+        const planData = {
+          userId: user.uid,
+          createdAt: Timestamp.now(),
+          status: 'active',
+          race: {
+            name: raceName,
+            date: Timestamp.fromDate(raceDateObj),
+            distance: raceDistance,
+            targetTime: targetTime || null,
+            city: raceCity || null,
+          },
+          trainingParams,
+          weeks,
+        };
 
-      const docRef = await addDoc(collection(db, 'plans'), planData);
-      router.push(`/plan/${docRef.id}`);
+        const docRef = await addDoc(collection(db, 'plans'), planData);
+        router.push(`/plan/${docRef.id}`);
+      } else {
+        // Save to localStorage for non-logged in users
+        const planId = generateLocalId();
+        const localPlan: Plan = {
+          id: planId,
+          userId: 'local',
+          createdAt: { toDate: () => new Date() } as Timestamp,
+          status: 'active',
+          race: {
+            name: raceName,
+            date: { toDate: () => raceDateObj } as Timestamp,
+            distance: raceDistance,
+            targetTime: targetTime || undefined,
+            city: raceCity || undefined,
+          },
+          trainingParams,
+          weeks: weeks.map(week => ({
+            ...week,
+            workouts: week.workouts.map(workout => ({
+              ...workout,
+              date: { toDate: () => workout.date } as unknown as Timestamp,
+            })),
+          })),
+        };
+
+        saveLocalPlan(localPlan);
+        setActivePlanId(planId);
+        router.push(`/plan/${planId}`);
+      }
     } catch (err) {
       console.error('Error creating plan:', err);
       setError('建立計劃時發生錯誤，請稍後再試');
@@ -113,7 +150,7 @@ export default function NewPlanPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-8">
+      <h1 className="text-3xl font-bold text-gray-700 dark:text-white mb-8">
         建立新訓練計劃
       </h1>
 
@@ -125,10 +162,10 @@ export default function NewPlanPage() {
               <div
                 className={`flex items-center justify-center w-10 h-10 rounded-full font-medium ${
                   currentStep === step.key
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-rose-400 text-white'
                     : steps.findIndex((s) => s.key === currentStep) > index
-                    ? 'bg-green-500 text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                    ? 'bg-mint-500 text-white'
+                    : 'bg-lavender-100 dark:bg-slate-700 text-lavender-600 dark:text-slate-400'
                 }`}
               >
                 {steps.findIndex((s) => s.key === currentStep) > index ? (
@@ -146,14 +183,14 @@ export default function NewPlanPage() {
               <span
                 className={`ml-2 text-sm font-medium ${
                   currentStep === step.key
-                    ? 'text-blue-600'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'text-rose-500'
+                    : 'text-gray-500 dark:text-slate-400'
                 }`}
               >
                 {step.label}
               </span>
               {index < steps.length - 1 && (
-                <div className="w-12 sm:w-24 h-0.5 mx-2 sm:mx-4 bg-slate-200 dark:bg-slate-700" />
+                <div className="w-12 sm:w-24 h-0.5 mx-2 sm:mx-4 bg-lavender-100 dark:bg-slate-700" />
               )}
             </div>
           ))}
@@ -161,8 +198,8 @@ export default function NewPlanPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="mb-6 p-4 bg-peach-50 dark:bg-peach-900/20 border border-peach-200 dark:border-peach-800 rounded-lg">
+          <p className="text-sm text-peach-600 dark:text-peach-400">{error}</p>
         </div>
       )}
 
@@ -229,57 +266,73 @@ export default function NewPlanPage() {
             <CardTitle>能力設定</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <p className="text-slate-600 dark:text-slate-400">
-              提供你的近期比賽成績，系統會計算出適合你的訓練配速。
-              如果沒有近期成績，我們會根據你的個人資料來估算。
+            <p className="text-gray-500 dark:text-slate-400">
+              提供你的跑步能力資訊，系統會計算出適合你的訓練配速和計劃。
             </p>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
+              <Input
+                label="目前週跑量 (km) *"
+                type="number"
+                min="10"
+                max="200"
+                value={weeklyMileage}
+                onChange={(e) => setWeeklyMileage(e.target.value)}
+                helperText="每週跑步總公里數"
+              />
+
               <Select
-                label="近期比賽距離"
-                value={recentRaceDistance}
-                onChange={(e) => setRecentRaceDistance(e.target.value as RaceDistance | '')}
+                label="每週訓練天數 *"
+                value={daysPerWeek}
+                onChange={(e) => setDaysPerWeek(e.target.value)}
                 options={[
-                  { value: '', label: '-- 選擇距離 --' },
-                  { value: '5K', label: '5 公里' },
-                  { value: '10K', label: '10 公里' },
-                  { value: 'half', label: '半程馬拉松' },
-                  { value: 'full', label: '全程馬拉松' },
+                  { value: '3', label: '3 天' },
+                  { value: '4', label: '4 天' },
+                  { value: '5', label: '5 天' },
+                  { value: '6', label: '6 天' },
                 ]}
               />
 
               <Input
-                label="完賽時間"
-                placeholder="例：25:30 或 1:55:00"
-                value={recentRaceTime}
-                onChange={(e) => setRecentRaceTime(e.target.value)}
-                helperText="格式：分:秒 或 時:分:秒"
+                label="跑齡 (月)"
+                type="number"
+                min="1"
+                max="360"
+                value={runningAge}
+                onChange={(e) => setRunningAge(e.target.value)}
+                helperText="開始規律跑步的時間"
               />
             </div>
 
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                你的個人資料
+            <div className="border-t border-rose-100 dark:border-slate-700 pt-6">
+              <h4 className="font-medium text-gray-700 dark:text-white mb-4">
+                近期比賽成績（選填）
               </h4>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-blue-700 dark:text-blue-300">週跑量：</span>
-                  <span className="text-blue-900 dark:text-blue-100">
-                    {userData?.ability.weeklyMileage || 0} km
-                  </span>
-                </div>
-                <div>
-                  <span className="text-blue-700 dark:text-blue-300">訓練天數：</span>
-                  <span className="text-blue-900 dark:text-blue-100">
-                    {userData?.availability.daysPerWeek || 4} 天/週
-                  </span>
-                </div>
-                <div>
-                  <span className="text-blue-700 dark:text-blue-300">跑齡：</span>
-                  <span className="text-blue-900 dark:text-blue-100">
-                    {userData?.ability.runningAge || 0} 個月
-                  </span>
-                </div>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                提供近期比賽成績可以更精確計算你的 VDOT 配速
+              </p>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <Select
+                  label="比賽距離"
+                  value={recentRaceDistance}
+                  onChange={(e) => setRecentRaceDistance(e.target.value as RaceDistance | '')}
+                  options={[
+                    { value: '', label: '-- 選擇距離 --' },
+                    { value: '5K', label: '5 公里' },
+                    { value: '10K', label: '10 公里' },
+                    { value: 'half', label: '半程馬拉松' },
+                    { value: 'full', label: '全程馬拉松' },
+                  ]}
+                />
+
+                <Input
+                  label="完賽時間"
+                  placeholder="例：25:30 或 1:55:00"
+                  value={recentRaceTime}
+                  onChange={(e) => setRecentRaceTime(e.target.value)}
+                  helperText="格式：分:秒 或 時:分:秒"
+                />
               </div>
             </div>
           </CardContent>
@@ -294,17 +347,17 @@ export default function NewPlanPage() {
           <CardContent className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                <h4 className="text-sm font-medium text-gray-400 dark:text-slate-400 mb-2">
                   賽事資訊
                 </h4>
                 <div className="space-y-2">
-                  <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                  <p className="text-lg font-semibold text-gray-700 dark:text-white">
                     {raceName}
                   </p>
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-gray-500 dark:text-slate-400">
                     {getDistanceLabel(raceDistance)}
                   </p>
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-gray-500 dark:text-slate-400">
                     {new Date(raceDate).toLocaleDateString('zh-TW', {
                       year: 'numeric',
                       month: 'long',
@@ -312,25 +365,19 @@ export default function NewPlanPage() {
                     })}
                   </p>
                   {raceCity && (
-                    <p className="text-slate-600 dark:text-slate-400">{raceCity}</p>
+                    <p className="text-gray-500 dark:text-slate-400">{raceCity}</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                <h4 className="text-sm font-medium text-gray-400 dark:text-slate-400 mb-2">
                   訓練設定
                 </h4>
-                <div className="space-y-2 text-slate-600 dark:text-slate-400">
-                  <p>
-                    週跑量：{userData?.ability.weeklyMileage || 20} km
-                  </p>
-                  <p>
-                    每週訓練：{userData?.availability.daysPerWeek || 4} 天
-                  </p>
-                  {targetTime && (
-                    <p>目標時間：{targetTime}</p>
-                  )}
+                <div className="space-y-2 text-gray-500 dark:text-slate-400">
+                  <p>週跑量：{weeklyMileage} km</p>
+                  <p>每週訓練：{daysPerWeek} 天</p>
+                  {targetTime && <p>目標時間：{targetTime}</p>}
                   {recentRaceDistance && recentRaceTime && (
                     <p>
                       參考成績：{getDistanceLabel(recentRaceDistance)} {recentRaceTime}
@@ -340,12 +387,20 @@ export default function NewPlanPage() {
               </div>
             </div>
 
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <div className="p-4 bg-lemon-50 dark:bg-lemon-900/20 border border-lemon-200 dark:border-lemon-800 rounded-lg">
+              <p className="text-sm text-lemon-800 dark:text-lemon-200">
                 點擊「建立計劃」後，系統將根據你的設定自動生成完整的週期化訓練計劃。
                 計劃會包含從現在到比賽日的所有訓練課表。
               </p>
             </div>
+
+            {!user && (
+              <div className="p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
+                <p className="text-sm text-sky-800 dark:text-sky-200">
+                  計劃會儲存在你的瀏覽器中。如需匯出到 Google Calendar 或連接 Garmin Connect，請登入帳號。
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
